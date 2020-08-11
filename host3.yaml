@@ -8,6 +8,9 @@ version: '2'
 volumes:
   orderer3.example.com:  
   peer0.org2.example.com:
+  peer1.org2.example.com:
+  couchdb0.org2.example.com:
+  couchdb1.org2.example.com:
 
 networks:
   byfn:
@@ -36,5 +39,39 @@ services:
     extends:
       file:  base/docker-compose-base.yaml
       service: peer0.org2.example.com
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb0.org2.example.com:5984
+    networks:
+      - byfn
+
+  couchdb0.org2.example.com:
+    container_name: couchdb0.org2.example.com
+    image: hyperledger/fabric-couchdb
+    volumes:
+      - ./chainData/couchdb/couchdb0org2:/opt/couchdb/data
+    ports:
+      - 5984:5984
+    networks:
+      - byfn
+
+  peer1.org2.example.com:
+    container_name: peer1.org2.example.com
+    extends:
+      file:  base/docker-compose-base.yaml
+      service: peer1.org2.example.com
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb1.org2.example.com:5984
+    networks:
+      - byfn
+
+  couchdb1.org2.example.com:
+    container_name: couchdb1.org2.example.com
+    image: hyperledger/fabric-couchdb
+    volumes:
+      - ./chainData/couchdb/couchdb1org2:/opt/couchdb/data
+    ports:
+      - 6984:5984
     networks:
       - byfn
