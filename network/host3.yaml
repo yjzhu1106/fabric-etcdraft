@@ -14,8 +14,8 @@ volumes:
 
 networks:
   byfn:
-    # external:
-    #   name: first-network
+     external:
+       name: first-network
 
 services:
 
