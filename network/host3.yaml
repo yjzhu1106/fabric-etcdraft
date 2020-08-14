@@ -1,0 +1,98 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+volumes:
+  orderer3.example.com:  
+  peer0.org2.example.com:
+  peer1.org2.example.com:
+  couchdb0.org2.example.com:
+  couchdb1.org2.example.com:
+
+networks:
+  byfn:
+    # external:
+    #   name: first-network
+
+services:
+
+  ca1:
+    image: hyperledger/fabric-ca:$IMAGE_TAG
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org2
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/priv_sk
+      - FABRIC_CA_SERVER_PORT=7054
+    ports:
+      - "7054:7054"
+    command: sh -c 'fabric-ca-server start --ca.certfile /etc/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem --ca.keyfile /etc/hyperledger/fabric-ca-server-config/priv_sk -b admin:adminpw -d'
+    volumes:
+      - ./crypto-config/peerOrganizations/org2.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
+    container_name: ca_peerOrg2
+    networks:
+      - byfn
+
+
+
+
+  orderer3.example.com:
+    extends:
+      file: base/peer-base.yaml
+      service: orderer-base
+    container_name: orderer3.example.com
+    networks:
+    - byfn
+    volumes:
+        - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+        - ./crypto-config/ordererOrganizations/example.com/orderers/orderer3.example.com/msp:/var/hyperledger/orderer/msp
+        - ./crypto-config/ordererOrganizations/example.com/orderers/orderer3.example.com/tls/:/var/hyperledger/orderer/tls
+        - orderer3.example.com:/var/hyperledger/production/orderer
+    ports:
+    - 7050:7050
+
+  peer0.org2.example.com:
+    container_name: peer0.org2.example.com
+    extends:
+      file:  base/docker-compose-base.yaml
+      service: peer0.org2.example.com
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb0.org2.example.com:5984
+    networks:
+      - byfn
+
+  couchdb0.org2.example.com:
+    container_name: couchdb0.org2.example.com
+    image: hyperledger/fabric-couchdb
+    volumes:
+      - ./chainData/couchdb/couchdb0org2:/opt/couchdb/data
+    ports:
+      - 5984:5984
+    networks:
+      - byfn
+
+  peer1.org2.example.com:
+    container_name: peer1.org2.example.com
+    extends:
+      file:  base/docker-compose-base.yaml
+      service: peer1.org2.example.com
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb1.org2.example.com:5984
+    networks:
+      - byfn
+
+  couchdb1.org2.example.com:
+    container_name: couchdb1.org2.example.com
+    image: hyperledger/fabric-couchdb
+    volumes:
+      - ./chainData/couchdb/couchdb1org2:/opt/couchdb/data
+    ports:
+      - 6984:5984
+    networks:
+      - byfn
